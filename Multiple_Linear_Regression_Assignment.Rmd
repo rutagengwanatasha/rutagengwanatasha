@@ -1,0 +1,636 @@
+---
+title: "Multiple Linear Regression and Regression Diagnostics"
+author: "Natasha umulisa RUTAGENGWA"
+registrationID: "20252MBI048"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+# Introduction
+
+We will use the built-in swiss dataset in R.
+
+It contains information about 47 French-speaking Swiss provinces and six variables.
+
+Our objective is to study how socioeconomic factors are related to fertility.
+## 1.2 Load the dataset
+
+```{r setup, message=FALSE, warning=FALSE}
+# Load the Swiss dataset
+data(swiss)
+
+# Display the first few records
+head(swiss)
+```
+
+## 1.3 Examine the dataset structure
+
+```{r}
+# Check the structure of the dataset
+str(swiss)
+
+# Find the number of observations and variables
+dim(swiss)
+
+# Display all variable names
+colnames(swiss)
+```
+
+The dataset contains 47 observations and six variables. Fertility is the dependent variable, while the other five variables are independent variables.
+
+## 1.4 Check for missing values
+
+```{r}
+# Check missing values in each variable
+colSums(is.na(swiss))
+
+# Count all missing values
+sum(is.na(swiss))
+```
+
+Missing values must be investigated before fitting a regression model because they can affect the number of observations used in the analysis.
+
+## 1.5 Descriptive statistics
+
+```{r}
+# Summary statistics
+summary(swiss)
+
+# Calculate means
+sapply(swiss, mean)
+
+# Calculate standard deviations
+sapply(swiss, sd)
+```
+
+Descriptive statistics provide information about the distribution of the variables, including their minimum, maximum, median, mean, and variability.
+
+# 2. Exploratory Data Analysis
+
+Exploratory data analysis helps us understand the relationships between the variables before fitting a regression model.
+
+## 2.1 Correlation analysis
+
+```{r}
+# Calculate relationships among all variables
+correlation_results <- cor(swiss)
+
+# Display the correlation values
+round(correlation_results, 2)
+```
+
+Correlation coefficients range from -1 to +1.
+
+- A positive correlation indicates that two variables tend to increase together.
+- A negative correlation indicates that one variable tends to decrease when the other increases.
+- A correlation close to zero indicates a weak linear relationship.
+
+Correlation does not necessarily imply causation.
+
+## 2.2 Visualize relationships between variables
+
+```{r}
+# Examine the relationship between fertility and agriculture
+plot(swiss$Agriculture, swiss$Fertility,
+     main = "Relationship Between Fertility and Agriculture",
+     xlab = "Agriculture (%)",
+     ylab = "Fertility",
+     pch = 19,
+     col = "darkgreen")
+
+# Add a regression line
+abline(lm(Fertility ~ Agriculture, data = swiss),
+       col = "red", lwd = 2)
+```
+
+```{r}
+# Examine the relationship between fertility and Catholic population
+plot(swiss$Catholic, swiss$Fertility,
+     main = "Relationship Between Fertility and Catholic Population",
+     xlab = "Catholic Population (%)",
+     ylab = "Fertility",
+     pch = 19,
+     col = "purple")
+
+# Add a regression line
+abline(lm(Fertility ~ Catholic, data = swiss),
+       col = "red", lwd = 2)
+```
+
+```{r}
+# Examine the relationship between fertility and examination
+plot(swiss$Examination, swiss$Fertility,
+     main = "Relationship Between Fertility and Examination",
+     xlab = "Examination (%)",
+     ylab = "Fertility",
+     pch = 19,
+     col = "orange")
+
+# Add a regression line
+abline(lm(Fertility ~ Examination, data = swiss),
+       col = "red", lwd = 2)
+```
+
+The scatter plots help identify whether the relationships between fertility and the explanatory variables appear positive, negative, or nonlinear.
+
+# 3. Multiple Linear Regression
+
+## 3.1 Model specification
+
+The dependent variable is Fertility.
+
+The independent variables are Agriculture, Examination, Education, Catholic, and Infant.Mortality.
+
+The regression model is:
+
+\[
+Fertility = \beta_0 + \beta_1 Agriculture
++ \beta_2 Examination + \beta_3 Education
++ \beta_4 Catholic + \beta_5 Infant.Mortality
++ \epsilon
+\]
+
+## 3.2 Fit the multiple linear regression model
+
+```{r}
+# Fit multiple linear regression model
+model <- lm(Fertility ~ Agriculture +
+              Examination +
+              Education +
+              Catholic +
+              Infant.Mortality,
+            data = swiss)
+
+# Display regression results
+summary(model)
+```
+
+The `lm()` function estimates the regression coefficients using the Ordinary Least Squares (OLS) method.
+
+## 3.3 Interpret regression coefficients
+
+```{r}
+# Extract regression coefficients
+coef(model)
+```
+
+The regression coefficients explain how the predicted fertility rate changes when an independent variable increases by one unit, holding all other independent variables constant.
+
+- A positive coefficient indicates a positive conditional association with fertility.
+- A negative coefficient indicates a negative conditional association with fertility.
+- A coefficient close to zero indicates a small estimated change per unit.
+
+The intercept represents the predicted fertility when all independent variables equal zero. It may not have a meaningful practical interpretation if that combination is outside the observed data.
+
+## 3.4 Display the coefficient table
+
+```{r}
+# Extract coefficient estimates and statistical tests
+coefficients_table <- as.data.frame(
+  summary(model)$coefficients
+)
+
+# Rename columns
+colnames(coefficients_table) <- c(
+  "Estimate",
+  "Standard Error",
+  "t value",
+  "p value"
+)
+
+knitr::kable(
+  round(coefficients_table, 4),
+  caption = "Multiple Linear Regression Coefficients"
+)
+```
+
+## 3.5 Interpret individual variable significance
+
+We use a 5% significance level.
+
+```{r}
+# Extract p-values
+p_values <- summary(model)$coefficients[, 4]
+
+# Display significance interpretation
+for (variable in names(p_values)) {
+
+  if (p_values[variable] < 0.05) {
+    cat(variable,
+        ": Statistically significant (p-value < 0.05)\n")
+  } else {
+    cat(variable,
+        ": Not statistically significant (p-value >= 0.05)\n")
+  }
+}
+```
+
+A p-value below 0.05 indicates statistically significant evidence against the null hypothesis that the corresponding coefficient is zero, conditional on the other variables in the model.
+
+A p-value greater than or equal to 0.05 means that the analysis does not provide sufficient evidence to reject the null hypothesis.
+
+## 3.6 Evaluate model goodness of fit
+
+```{r}
+# Display model R-squared
+summary(model)$r.squared
+
+# Display adjusted R-squared
+summary(model)$adj.r.squared
+
+# Display residual standard error
+summary(model)$sigma
+
+# Display F-statistic
+summary(model)$fstatistic
+```
+
+### Interpretation of R-squared
+
+R-squared measures the proportion of variation in fertility explained by the independent variables included in the regression model.
+
+For example, an R-squared of 0.80 would indicate that 80% of the observed variation in fertility is explained by the fitted model.
+
+Adjusted R-squared accounts for the number of explanatory variables and is useful when evaluating models containing multiple predictors.
+
+### Overall model significance
+
+The F-test evaluates whether the explanatory variables jointly provide evidence of a linear relationship with fertility.
+
+The hypotheses are:
+
+\[
+H_0: \beta_1=\beta_2=\beta_3=\beta_4=\beta_5=0
+\]
+
+\[
+H_1: \text{At least one } \beta_i \ne 0
+\]
+
+```{r}
+# Extract F-statistic and p-value
+model_f <- summary(model)$fstatistic
+
+f_value <- unname(model_f[1])
+f_p_value <- pf(
+  f_value,
+  model_f[2],
+  model_f[3],
+  lower.tail = FALSE
+)
+
+cat("F-statistic:", f_value, "\n")
+cat("Overall model p-value:", f_p_value, "\n")
+
+if (f_p_value < 0.05) {
+  cat("Conclusion: Reject the null hypothesis.\n")
+  cat("The regression model is statistically significant.\n")
+} else {
+  cat("Conclusion: Fail to reject the null hypothesis.\n")
+  cat("The regression model is not statistically significant at 5%.\n")
+}
+```
+
+# 4. Regression Diagnostics
+
+Regression diagnostics help determine whether the assumptions of multiple linear regression are reasonably satisfied.
+
+The major assumptions examined in this assignment are:
+
+1. Linearity.
+2. Normality of residuals.
+3. Homoscedasticity (constant error variance).
+4. Absence of serious multicollinearity.
+5. Independence of errors.
+6. Absence of excessively influential observations.
+
+## 4.1 Linearity assumption
+
+Linearity means that the expected value of the dependent variable is a linear function of the model predictors.
+
+We use a residuals-versus-fitted plot to investigate this assumption.
+
+```{r}
+plot(model, which = 1)
+```
+
+Interpretation:
+
+- A random distribution of residuals around zero supports the linearity assumption.
+- A clear curved pattern may indicate a nonlinear relationship.
+- A systematic pattern suggests that the model may be missing important structure.
+
+## 4.2 Normality of residuals
+
+The normality assumption states that the regression errors are approximately normally distributed for the usual small-sample t and F inference.
+
+We examine a histogram, a Q-Q plot, and the Shapiro-Wilk test.
+
+```{r}
+# Calculate model residuals
+residuals_model <- residuals(model)
+
+# Histogram
+hist(residuals_model,
+     main = "Histogram of Regression Residuals",
+     xlab = "Residuals",
+     col = "lightblue",
+     border = "black")
+```
+
+```{r}
+# Normal Q-Q plot
+qqnorm(residuals_model,
+       main = "Normal Q-Q Plot of Residuals")
+
+qqline(residuals_model,
+       col = "red",
+       lwd = 2)
+```
+
+### Shapiro-Wilk normality test
+
+Hypotheses:
+
+\[
+H_0: \text{Residuals are normally distributed}
+\]
+
+\[
+H_1: \text{Residuals are not normally distributed}
+\]
+
+```{r}
+# Perform Shapiro-Wilk test
+shapiro_result <- shapiro.test(residuals_model)
+
+shapiro_result
+```
+
+```{r}
+# Interpret the test
+if (shapiro_result$p.value > 0.05) {
+  cat("Fail to reject H0: There is insufficient evidence of non-normality.\n")
+} else {
+  cat("Reject H0: There is evidence that residuals are not normally distributed.\n")
+}
+```
+
+A p-value greater than 0.05 indicates that the test does not find sufficient evidence against normality. It does not prove that the residuals are normally distributed.
+
+## 4.3 Homoscedasticity assumption
+
+Homoscedasticity means that the variance of the regression errors remains approximately constant across different fitted values.
+
+We use a residual plot and the Breusch-Pagan test.
+
+```{r}
+# Residuals versus fitted values
+plot(fitted(model),
+     residuals_model,
+     main = "Residuals vs Fitted Values",
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     pch = 19,
+     col = "blue")
+
+abline(h = 0, col = "red", lwd = 2)
+```
+
+### Breusch-Pagan test
+
+Hypotheses:
+
+\[
+H_0: \text{The error variance is constant}
+\]
+
+\[
+H_1: \text{The error variance is not constant}
+\]
+
+```{r}
+# Breusch-Pagan test using an auxiliary regression
+bp_auxiliary <- lm(
+  I(residuals_model^2) ~ Agriculture +
+    Examination +
+    Education +
+    Catholic +
+    Infant.Mortality,
+  data = swiss
+)
+
+# Calculate the test statistic
+bp_statistic <- nrow(swiss) *
+  summary(bp_auxiliary)$r.squared
+
+# Calculate p-value using chi-square distribution
+bp_p_value <- pchisq(
+  bp_statistic,
+  df = 5,
+  lower.tail = FALSE
+)
+
+cat("Breusch-Pagan LM statistic:", bp_statistic, "\n")
+cat("Breusch-Pagan p-value:", bp_p_value, "\n")
+
+if (bp_p_value > 0.05) {
+  cat("Fail to reject H0: No significant evidence of heteroscedasticity.\n")
+} else {
+  cat("Reject H0: Evidence of heteroscedasticity exists.\n")
+}
+```
+
+Interpretation:
+
+- If the p-value is greater than 0.05, we do not find sufficient evidence of non-constant error variance.
+- If the p-value is below 0.05, there is evidence of heteroscedasticity.
+
+The test above uses the classical Breusch-Pagan auxiliary-regression approach.
+
+## 4.4 Multicollinearity
+
+Multicollinearity occurs when two or more independent variables are strongly linearly related.
+
+It can increase the standard errors of regression coefficients and make individual effects difficult to distinguish.
+
+We use the Variance Inflation Factor (VIF).
+
+\[
+VIF_i = \frac{1}{1-R_i^2}
+\]
+
+Where \(R_i^2\) is obtained by regressing one independent variable on all the other independent variables.
+
+```{r}
+# Independent variables
+predictors <- swiss[, c(
+  "Agriculture",
+  "Examination",
+  "Education",
+  "Catholic",
+  "Infant.Mortality"
+)]
+
+# Function to calculate VIF without an additional package
+calculate_vif <- function(data) {
+
+  vif_values <- numeric(ncol(data))
+
+  names(vif_values) <- names(data)
+
+  for (i in seq_along(data)) {
+
+    other_variables <- data[, -i, drop = FALSE]
+
+    auxiliary_model <- lm(
+      data[[i]] ~ .,
+      data = other_variables
+    )
+
+    r_squared <- summary(auxiliary_model)$r.squared
+
+    vif_values[i] <- 1 / (1 - r_squared)
+  }
+
+  return(vif_values)
+}
+
+# Calculate VIF values
+vif_results <- calculate_vif(predictors)
+
+vif_results
+```
+
+Interpretation guidelines:
+
+- VIF close to 1: Little multicollinearity.
+- VIF between 1 and 5: Usually acceptable.
+- VIF above 5: Possible multicollinearity concern.
+- VIF above 10: Serious multicollinearity concern.
+
+These are common guidelines rather than absolute statistical rules.
+
+## 4.5 Influential observations and outliers
+
+An influential observation is an observation that can substantially affect the estimated regression coefficients.
+
+Cook's distance helps identify potentially influential observations.
+
+```{r}
+# Calculate Cook's distance
+cooks_distance <- cooks.distance(model)
+
+# Plot Cook's distance
+plot(cooks_distance,
+     type = "h",
+     main = "Cook's Distance",
+     xlab = "Observation",
+     ylab = "Cook's Distance")
+
+# Reference threshold
+abline(h = 4 / nrow(swiss),
+       col = "red",
+       lty = 2)
+```
+
+```{r}
+# Identify observations above the reference threshold
+influential_points <- which(
+  cooks_distance > 4 / nrow(swiss)
+)
+
+influential_points
+
+# Display potentially influential observations
+swiss[influential_points, ]
+```
+
+The reference threshold of 4/n is a screening guideline, not an automatic rule for deleting observations.
+
+Observations should be investigated before deciding whether they require special treatment.
+
+## 4.6 Additional regression diagnostic plots
+
+```{r}
+# Display four standard regression diagnostic plots
+par(mfrow = c(2, 2))
+
+plot(model, which = 1)
+plot(model, which = 2)
+plot(model, which = 3)
+plot(model, which = 4)
+
+# Restore the plotting layout
+par(mfrow = c(1, 1))
+```
+
+These plots examine:
+
+1. Residuals versus fitted values: linearity and variance patterns.
+2. Normal Q-Q: residual normality.
+3. Scale-Location: constant variance.
+4. Residuals versus leverage: potentially influential observations.
+
+# 5. Model Prediction
+
+After fitting the model, we can use it to predict fertility for a new observation with specified socioeconomic characteristics.
+
+```{r}
+# Create a new observation using the mean of each predictor
+new_data <- data.frame(
+  Agriculture = mean(swiss$Agriculture),
+  Examination = mean(swiss$Examination),
+  Education = mean(swiss$Education),
+  Catholic = mean(swiss$Catholic),
+  Infant.Mortality = mean(swiss$Infant.Mortality)
+)
+
+# Predict fertility
+predicted_fertility <- predict(
+  model,
+  newdata = new_data,
+  interval = "prediction"
+)
+
+predicted_fertility
+```
+
+The prediction provides an estimated fertility value for a province with the specified predictor values.
+
+The prediction interval represents uncertainty for an individual future observation, rather than just uncertainty about the mean response.
+
+# 6. Results and Interpretation
+
+The multiple linear regression model examines the joint association between fertility and five socioeconomic variables.
+
+The coefficient estimates indicate the direction and magnitude of the conditional relationships, while the p-values help assess statistical significance.
+
+The R-squared and adjusted R-squared values indicate how much variation in fertility is explained by the model.
+
+The F-test evaluates whether the predictors are jointly statistically significant.
+
+Regression diagnostic tests and plots are used to evaluate the suitability of the model assumptions.
+
+
+# 7. Conclusion
+
+This assignment demonstrated how multiple linear regression can be applied to investigate the relationship between a dependent variable and several independent variables.
+
+The Swiss Fertility dataset was used to estimate a regression model with fertility as the dependent variable and agriculture, examination, education, Catholic population percentage, and infant mortality as explanatory variables.
+
+The analysis covered descriptive statistics, correlation, visualization, regression estimation, coefficient interpretation, hypothesis testing, model goodness of fit, and regression diagnostics.
+
+The diagnostic analysis is important because a statistically significant regression model is not automatically an appropriate model. Its assumptions must also be examined.
+
+Finally, the results describe associations in historical observational data. They should not be interpreted as proof that the explanatory variables cause changes in fertility.
+
+# 8. References
+
+1. R Core Team. R: A Language and Environment for Statistical Computing.
+2. R Documentation. `swiss` dataset, available in the datasets package.
+3. R Documentation. `lm()` function for fitting linear models.
+4. Montgomery, D. C., Peck, E. A., and Vining, G. G. Introduction to Linear Regression Analysis.

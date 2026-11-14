@@ -1,0 +1,147 @@
+---
+title: "Application of apply, sapply,vapply, lappay"
+author: "Natasha Umulisa RUTAGENGWA"
+registrationID: "20252MBI048"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  pdf_document:
+    toc: true
+    number_sections: true
+---
+
+
+
+
+```{r}
+sales <- matrix(
+  c(120, 150, 180,
+    100, 130, 160,
+    140, 170, 200),
+  nrow = 3,
+  byrow = TRUE
+)
+
+colnames(sales) <- c("January", "February", "March")
+rownames(sales) <- c("Alice", "David", "Sarah")
+
+print(sales)
+``` 
+# Understanding apply()
+
+apply() is used to perform an operation on the rows or columns of a matrix or array.
+
+Understand the syntax:
+
+apply(X, MARGIN, FUN)
+
+X:	The matrix or array
+
+MARGIN:	Whether to operate on rows or columns
+
+FUN:	The function to apply
+
+
+```{r}
+# Calculate average sales for each employee
+apply(sales, 1, mean)
+```
+
+
+```{r}
+# Calculate total sales for each month
+apply(sales, 2, sum)
+
+# Find the highest sales for each month
+apply(sales, 2, max)
+
+# Find the lowest sales for each month
+apply(sales, 2, min)
+
+# Calculate standard deviation for each month
+apply(sales, 2, sd)
+```
+# Understanding lapply()
+
+lapply() applies a function to every element of a list and always returns a list.
+
+First, create a list:
+
+
+```{r}
+
+employee_sales <- list(
+  Alice = c(120, 150, 180),
+  David = c(100, 130, 160),
+  Sarah = c(140, 170, 200)
+)
+
+print(employee_sales)
+
+```   
+
+
+
+Now calculate the average sales:
+
+
+```{r}
+lapply(employee_sales, mean)
+```
+lapply() always returns a list, even when the results are just individual numbers.
+
+# Understanding sapply().
+Calculate the mean
+
+```{r}
+sapply(employee_sales, mean)
+
+```
+
+
+Calculate the sum
+
+```{r}
+sapply(employee_sales, sum)
+```
+
+
+
+
+# Understanding vapply()
+
+vapply() works like sapply(), but you specify the expected output type and size.
+
+vapply(X, FUN, FUN.VALUE)
+
+Example: Calculate the mean
+
+```{r}
+vapply(employee_sales, mean, numeric(1))
+```
+
+
+Why numeric(1)?
+
+Because we expect one numerical answer (the average) for each employee.
+
+```{r}
+vapply(employee_sales, function(x) {
+  c(
+    Mean = mean(x),
+    Median = median(x),
+    Minimum = min(x),
+    Maximum = max(x),
+    Total = sum(x),
+    Standard_Deviation = sd(x)
+  )
+}, numeric(6))
+```
+
+Why numeric(6)?
+
+Because our function returns six numerical results for each employee.
+
+
