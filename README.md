@@ -42,4 +42,4 @@ data <- read.csv("data/file.csv")
 
 ## Author
 
-**Ganza Jean Respice**
+**RUTAGENGWA UMULISA NATASHA**
